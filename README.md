@@ -1,5 +1,7 @@
 # nevermind
 
+a node version manager
+
 A play on `nvm`.  Inspired by both [nvm-sh](https://github.com/nvm-sh/nvm) and [nvm-windows](https://github.com/coreybutler/nvm-windows), which were written in shell and go, respectively.
 
 ## Installation (WIP)
