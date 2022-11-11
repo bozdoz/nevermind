@@ -13,8 +13,7 @@ var ListCmd = flag.NewFlagSet("list", flag.ContinueOnError)
 
 func init() {
 	ListCmd.Usage = func() {
-		utils.PrintTabs("\tlist\tlist installed node versions")
-		utils.PrintTabs("\t\talias: ls")
+		utils.PrintTabs("\tlist, ls\tlist installed node versions")
 	}
 }
 

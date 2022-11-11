@@ -44,8 +44,7 @@ func init() {
 	}
 
 	InstallCmd.Usage = func() {
-		utils.PrintTabs("\tinstall\tinstall a version of node")
-		utils.PrintTabs("\t\talias: i")
+		utils.PrintTabs("\tinstall, i\tinstall a version of node")
 	}
 }
 

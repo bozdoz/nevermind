@@ -12,8 +12,7 @@ var WhichCmd = flag.NewFlagSet("which", flag.ContinueOnError)
 
 func init() {
 	WhichCmd.Usage = func() {
-		utils.PrintTabs("\twhich\tget the path to the node executable for a given version")
-		utils.PrintTabs("\t\talias: where")
+		utils.PrintTabs("\twhich, where\tget the path to the node executable for a given version")
 	}
 }
 
