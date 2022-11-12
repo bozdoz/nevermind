@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 )
 
+// save `body` bytes to `filename`
+// TODO: this may be deprecated if we transfer
+// http response directly to file, sha, and progresssbar
 func SaveToFile(body []byte, filename string) error {
 	file, err := os.Create(filename)
 

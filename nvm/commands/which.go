@@ -8,6 +8,7 @@ import (
 	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
+// flag set for [commands.Which]
 var WhichCmd = flag.NewFlagSet("which", flag.ContinueOnError)
 
 func init() {
@@ -16,6 +17,7 @@ func init() {
 	}
 }
 
+// get the path to the node executable for a given version
 func Which(cmd string, args []string) (err error) {
 	if len(args) < 1 {
 		return fmt.Errorf("%s command requires a single argument for version", cmd)

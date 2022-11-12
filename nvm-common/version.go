@@ -5,8 +5,12 @@ import (
 	"regexp"
 )
 
+// a parsed, verified version string
+// returned by [common.GetVersion]
+type Version string
+
 // case-insensitive, leading v, major.minor.patch
-func GetVersion(v string) (string, error) {
+func GetVersion(v string) (Version, error) {
 	re := regexp.MustCompile(`(?i)^v?(\d+(?:\.?\d+){0,2})$`)
 	version := re.FindStringSubmatch(v)
 
@@ -14,5 +18,5 @@ func GetVersion(v string) (string, error) {
 		return "", fmt.Errorf("could not determine version: %s", v)
 	}
 
-	return version[1], nil
+	return Version(version[1]), nil
 }

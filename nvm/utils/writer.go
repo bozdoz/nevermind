@@ -6,12 +6,15 @@ import (
 	"text/tabwriter"
 )
 
-var w = tabwriter.NewWriter(os.Stderr, 1, 1, 4, ' ', 0)
+// customized writer to print help logs nicely
+var Writer = tabwriter.NewWriter(os.Stderr, 1, 1, 4, ' ', 0)
 
+// aligns tabs with tabwriter
 func PrintTabs(str string) {
-	fmt.Fprintln(w, str)
+	fmt.Fprintln(Writer, str)
 }
 
+// flush tabbed output to stdout
 func FlushTabs() {
-	w.Flush()
+	Writer.Flush()
 }

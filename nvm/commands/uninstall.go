@@ -11,6 +11,7 @@ import (
 	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
+// flag set for [commands.Uninstall]
 var UninstallCmd = flag.NewFlagSet("uninstall", flag.ContinueOnError)
 
 func init() {
@@ -19,6 +20,7 @@ func init() {
 	}
 }
 
+// uninstall a specific version of node
 func Uninstall(args []string) (err error) {
 	if len(args) < 1 {
 		return errors.New("uninstall requires a single argument for version")
@@ -50,7 +52,7 @@ func Uninstall(args []string) (err error) {
 		log.Println("failed to get config: %w", err)
 	}
 
-	err = os.RemoveAll(common.GetNVMDir("node", version))
+	err = os.RemoveAll(common.GetNVMDir("node", string(version)))
 
 	if err != nil {
 		return

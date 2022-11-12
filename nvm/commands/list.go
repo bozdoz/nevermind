@@ -9,6 +9,7 @@ import (
 	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
+// flag set for [commands.List]
 var ListCmd = flag.NewFlagSet("list", flag.ContinueOnError)
 
 func init() {
@@ -17,6 +18,7 @@ func init() {
 	}
 }
 
+// list installed node versions
 func List(cmd string, args []string) (err error) {
 	dir := common.GetNVMDir("node")
 

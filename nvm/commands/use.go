@@ -10,6 +10,7 @@ import (
 	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
+// flag set for [commands.Use]
 var UseCmd = flag.NewFlagSet("use", flag.ContinueOnError)
 
 func init() {
@@ -18,6 +19,8 @@ func init() {
 	}
 }
 
+// use a version of node (updates config with desired version)
+// TODO: use should output success message
 func Use(args []string) (err error) {
 	if len(args) == 0 {
 		return errors.New("use did not get arguments")

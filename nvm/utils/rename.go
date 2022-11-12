@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+// rename or move file; moving may be required
+// if using a docker container with volumes
 func Rename(source, target string) (err error) {
 	err = os.Rename(source, target)
 

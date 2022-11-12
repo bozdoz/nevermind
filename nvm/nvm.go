@@ -1,6 +1,21 @@
+/*
+nevermind. a node version manager
+
+# Environment Variables
+
+DEBUG:
+  - set DEBUG=* to enable ALL debugging
+  - set DEBUG=1 to enable go debugging
+
+NVM_NODEJS_ORG_MIRROR:
+  - set an alternate proxy for https://nodejs.org/dist
+*/
 package main
 
+//go:generate go build -o $HOME/.nevermind/bin/nvm ./
+
 import (
+	_ "embed"
 	"flag"
 	"fmt"
 	"log"
@@ -11,14 +26,18 @@ import (
 	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
-type Env struct {
-	Help *flag.FlagSet
-}
+// nvm version
+const VERSION = "v0.1.2"
 
-var env = &Env{}
+var help *flag.FlagSet
+
+var vFlag = flag.Bool("v", false, "print version of nvm")
 
 func init() {
 	common.Debugger()
+
+	// uses tabwriter to align tabs
+	flag.CommandLine.SetOutput(utils.Writer)
 
 	flag.Usage = func() {
 		utils.PrintTabs("nevermind. a node version manager.")
@@ -26,6 +45,9 @@ func init() {
 		utils.PrintTabs("USAGE:")
 		utils.PrintTabs("\tnvm install <version>")
 		utils.PrintTabs("\tnvm use <version>")
+		utils.PrintTabs("")
+		utils.PrintTabs("FLAGS:")
+		flag.PrintDefaults()
 		utils.PrintTabs("")
 		utils.PrintTabs("SUBCOMMANDS:")
 		commands.InstallCmd.Usage()
@@ -38,13 +60,12 @@ func init() {
 }
 
 func fail(message string) {
-	fmt.Println("")
-	fmt.Println(message)
+	fmt.Println("Error:", message)
 
-	if env.Help == nil {
+	if help == nil {
 		flag.Usage()
 	} else {
-		env.Help.Usage()
+		help.Usage()
 	}
 
 	fmt.Println("")
@@ -58,13 +79,17 @@ func main() {
 
 	args := flag.Args()
 
-	log.Println("running with args", args)
+	log.Println("args", args)
+	log.Println("vFlag", *vFlag)
 
 	if len(args) == 0 {
-		fmt.Println("Please specify a subcommand.")
-		fmt.Println("")
-		flag.Usage()
-		os.Exit(1)
+		// -v passed
+		if *vFlag {
+			fmt.Println(VERSION)
+		} else {
+			fail("Please specify a subcommand\n")
+		}
+		return
 	}
 
 	cmd, args := args[0], args[1:]
@@ -75,19 +100,19 @@ func main() {
 	// TODO: maybe we should time the whole command
 	switch cmd {
 	case "install", "i":
-		env.Help = commands.InstallCmd
+		help = commands.InstallCmd
 		err = commands.Install(args)
 	case "uninstall":
-		env.Help = commands.UninstallCmd
+		help = commands.UninstallCmd
 		err = commands.Uninstall(args)
 	case "use":
-		env.Help = commands.UseCmd
+		help = commands.UseCmd
 		err = commands.Use(args)
 	case "list", "ls":
-		env.Help = commands.ListCmd
+		help = commands.ListCmd
 		err = commands.List(cmd, args)
 	case "which", "where":
-		env.Help = commands.WhichCmd
+		help = commands.WhichCmd
 		err = commands.Which(cmd, args)
 	default:
 		err = fmt.Errorf("no command defined: %s", cmd)

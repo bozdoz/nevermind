@@ -7,7 +7,7 @@ import (
 )
 
 type config struct {
-	Current string `json:"current"`
+	Current Version `json:"current"`
 }
 
 func GetConfig() (cfg config, err error) {

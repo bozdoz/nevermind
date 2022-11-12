@@ -35,32 +35,46 @@ Run with `DEBUG=1` to output debug logs:
 DEBUG=1 go run ./nvm install 16.0.0
 ```
 
-After `install`, and `use`, you can call the executable:
+After `install`, and `use`, you might need to build the executable:
 
 ```bash
-go run ./nvm-shim -v
+go build -o ~/.nevermind/bin ./nvm-shim
 ```
 
+Make sure this directory is in your `PATH` (perhaps via `.bashrc`):
+
 ```bash
-go run ./nvm-shim -e "console.log('hello from node')"
+export PATH="$HOME/.nevermind/bin:$PATH"
 ```
+
+If this is all set up, you should be able to run:
+
+```bash
+node -v
+```
+
+(WIP) `npm`, `npx`, and anything installed via `npm i -g`
 
 ### Remaining tasks
 
 - Access to `npm` and `npx` executables
-- Build script for nvm-shim, and symlinking node, npm, and npx
-- build script in general (nothing is built!)
+  - possible now by building nvm-shim to PATH as `node`, then symlinking `npm` and `npx` to the shim
+- ~~Build script for nvm-shim~~, and symlinking node, npm, and npx
 - github actions for building and generating tags and packages
+  - no idea if this is what I want
 - install script (bash?)
+  - I want a way to automatically build nvm-shim, update PATH, create binary symlinks on installation
 - progress bar on node download
 - search for matching node download if only major or minor numbers are given
 - ability to download latest LTS
-- documentation
+- ~~documentation~~ Maybe done with godoc
 - tests
 - automatically call `install` when `use` doesn't match
 - automatically call `use` after `install`
 - make sure there's no infinite loops of `install` and `use`
-- download timeouts
-- handle 404 not found from installs
-- figure out go mod versioning
+- figure out go mod versioning??
 - write install script for windows (extracting zip at minimum)
+- figure out global installs (e.g. npm i -g yarn)
+  - it goes to node/v/bin as a symlink
+- optimize downloads and untar/ungzip with streams
+  - ideally download to file & ungzip & sha at the same time with io.MultiWriter (am I crazy?)

@@ -1,3 +1,18 @@
+/*
+commands holds all flagset commands for nvm:
+
+  - install
+  - use
+  - list
+  - uninstall
+  - which
+
+Example
+
+	nvm install 18.0.0
+	nvm use 18.0.0
+	node -v // v18.0.0
+*/
 package commands
 
 import (
@@ -18,13 +33,18 @@ import (
 	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
+// remote filename which indicates sha's for each downloadable file
 const SHASUMS = "SHASUMS256.txt"
 
-type node_download int
+// default download location
+const DEFAULT_BASE_URL = "https://nodejs.org/dist"
+
+// Enum for downloading either node or shasums
+type NodeDownload int
 
 const (
-	DOWNLOAD_NODE node_download = iota
-	DOWNLOAD_SHASUM
+	DOWNLOAD_NODE   NodeDownload = iota // downloads node
+	DOWNLOAD_SHASUM                     // downloads SHASUMS
 )
 
 // makes the enum exclusive
@@ -32,15 +52,23 @@ type exclusive_node_file interface {
 	X()
 }
 
-func (d node_download) X() {}
+// ignore me
+func (d NodeDownload) X() {}
 
 // TODO: document env variables that we use
+
+// NVM_NODEJS_ORG_MIRROR - base url for downloading node; default: "https://nodejs.org/dist"
 var BASE_URL = os.Getenv("NVM_NODEJS_ORG_MIRROR")
+
+// flag set for [commands.Install]
 var InstallCmd = flag.NewFlagSet("install", flag.ContinueOnError)
 
+var installHelp = InstallCmd.Bool("help", false, `prints help text`)
+
 func init() {
+	// sets default for BASE_URL
 	if BASE_URL == "" {
-		BASE_URL = "https://nodejs.org/dist"
+		BASE_URL = DEFAULT_BASE_URL
 	}
 
 	InstallCmd.Usage = func() {
@@ -48,7 +76,8 @@ func init() {
 	}
 }
 
-// this can be cached
+// TODO: this can be cached, or run once
+// used to determine download url in [commands.GetDownloadUrl]
 func GetOsAndArch() (remote_os, remote_arch string) {
 	remote_arch = runtime.GOARCH
 
@@ -73,7 +102,16 @@ func GetOsAndArch() (remote_os, remote_arch string) {
 	return
 }
 
-func GetDownloadUrl(v string, d exclusive_node_file) string {
+/*
+determine where to download node install files
+
+`v` a verified/parsed version string
+
+`d` is a [commands.NodeDownload]
+
+used by [commands.Install]
+*/
+func GetDownloadUrl(v common.Version, d exclusive_node_file) string {
 	remote_os, remote_arch := GetOsAndArch()
 	ext := "tar.gz"
 
@@ -93,14 +131,28 @@ func GetDownloadUrl(v string, d exclusive_node_file) string {
 	}
 }
 
-func Download(url string, ch chan []byte) (err error) {
+/*
+actually downloads a url and passes the []bytes
+to the channel;
+if there is an error, we pass it to `err_ch`
+used by [commands.Install]
+*/
+func Download(url string, ch chan []byte, err_ch chan error) {
+	defer close(ch)
 	s := time.Now()
 	res, err := http.Get(url)
+
 	if err != nil {
+		err_ch <- err
 		return
 	}
 
 	body, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		err_ch <- err
+		return
+	}
 
 	res.Body.Close()
 
@@ -108,18 +160,13 @@ func Download(url string, ch chan []byte) (err error) {
 	log.Println("headers", res.Header)
 
 	if res.StatusCode != 200 {
-		// TODO: close channel?
-		return fmt.Errorf("request of %s failed with status code: %d and\nbody: %s", url, res.StatusCode, body)
-	}
-
-	if err != nil {
+		err_ch <- fmt.Errorf("request of %s failed with status code: %d", url, res.StatusCode)
 		return
 	}
 
 	log.Printf("downloaded %s (%s)", url, time.Since(s))
-	ch <- body
 
-	return nil
+	ch <- body
 }
 
 func CheckSha(fileName string, node_body, sha_body []byte) error {
@@ -149,7 +196,20 @@ func CheckSha(fileName string, node_body, sha_body []byte) error {
 	return fmt.Errorf("could not find filename (%s) in %s", fileName, SHASUMS)
 }
 
+// install a given node version
+// TODO: install should output success message
+// TODO: nvm install -h outputs help text twice
+// TODO: install should always update/create symlinks in .nevermind/bin
 func Install(args []string) (err error) {
+	InstallCmd.Parse(args)
+
+	if *installHelp {
+		// TODO: maybe verbose help message here
+		InstallCmd.Usage()
+		utils.FlushTabs()
+		return
+	}
+
 	if len(args) == 0 {
 		return errors.New("install did not get arguments")
 	}
@@ -168,13 +228,28 @@ func Install(args []string) (err error) {
 
 	node_chan := make(chan []byte)
 	sha_chan := make(chan []byte)
+	err_chan := make(chan error)
 
 	// TODO: allow cancelling the downloads via SIGINT
-	go Download(node_url, node_chan)
-	go Download(sha_url, sha_chan)
+	go Download(node_url, node_chan, err_chan)
+	go Download(sha_url, sha_chan, err_chan)
 
-	node_body := <-node_chan
-	sha_body := <-sha_chan
+	var node_body []byte
+	var sha_body []byte
+
+	select {
+	case node_body = <-node_chan:
+		break
+	case err = <-err_chan:
+		return
+	}
+
+	select {
+	case sha_body = <-sha_chan:
+		break
+	case err = <-err_chan:
+		return
+	}
 
 	segments := strings.Split(node_url, "/")
 	baseFileName := segments[len(segments)-1]
@@ -213,7 +288,7 @@ func Install(args []string) (err error) {
 		return
 	}
 
-	targetDir := common.GetNVMDir("node", version)
+	targetDir := common.GetNVMDir("node", string(version))
 	sourceDir := strings.TrimSuffix(unzipped, ".tar")
 
 	err = os.Rename(sourceDir, targetDir)

@@ -8,8 +8,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"syscall"
 )
 
+// TODO: gzipping can be done with the tarring:
+// https://cs.opensource.google/go/x/build/+/8c11e572:internal/untar/untar.go
+// reverse the effects of tarring
 func Untar(tarball, target string) error {
 	reader, err := os.Open(tarball)
 	if err != nil {
@@ -27,11 +31,21 @@ func Untar(tarball, target string) error {
 			return err
 		}
 
-		log.Println("extracting", header.Name)
+		// TODO: zip slip vulnerability
+		// destpath := filepath.Join(destination, filePath)
+		// if !strings.HasPrefix(destpath, filepath.Clean(destination)+string(os.PathSeparator)) {
+		// 	return fmt.Errorf("%s: illegal file path", filePath)
+		// }
 
 		path := filepath.Join(target, header.Name)
 
 		info := header.FileInfo()
+
+		if header.Typeflag == tar.TypeSymlink {
+			log.Println("found symlink", header.Linkname, path)
+			syscall.Symlink(header.Linkname, path)
+			continue
+		}
 		if info.IsDir() {
 			if err = os.MkdirAll(path, info.Mode()); err != nil {
 				return err

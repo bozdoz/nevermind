@@ -5,8 +5,10 @@ import (
 	"path/filepath"
 )
 
-var NVMDIR = ".nevermind"
+// user-relative path to app directory
+const NVMDIR string = ".nevermind"
 
+// get a path relative to [common.NVMDIR]
 func GetNVMDir(path ...string) string {
 	// TODO: deal with this error
 	homeDir, _ := os.UserHomeDir()
@@ -21,9 +23,10 @@ func GetNVMDir(path ...string) string {
 	return filepath.Join(path...)
 }
 
-// bin should be "node", "npm", "npx"
-func GetNodeBin(version, bin string) (dir string, err error) {
-	dir = GetNVMDir("node", version, "bin", bin)
+// bin should likely be "node", "npm", "npx"; or any other node bin
+// installed globally (e.g. yarn, typescript)
+func GetNodeBin(version Version, bin string) (dir string, err error) {
+	dir = GetNVMDir("node", string(version), "bin", bin)
 
 	_, err = os.Stat(dir)
 
