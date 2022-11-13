@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	common "github.com/bozdoz/nevermind/nvm-common"
@@ -38,6 +39,9 @@ const SHASUMS = "SHASUMS256.txt"
 
 // default download location
 const DEFAULT_BASE_URL = "https://nodejs.org/dist"
+
+// basename of binary in NVM_DIR
+const NVM_SHIM = "nvm-shim"
 
 // Enum for downloading either node or shasums
 type NodeDownload int
@@ -64,6 +68,7 @@ var BASE_URL = os.Getenv("NVM_NODEJS_ORG_MIRROR")
 var InstallCmd = flag.NewFlagSet("install", flag.ContinueOnError)
 
 var installHelp = InstallCmd.Bool("help", false, `prints help text`)
+var installNoUse = InstallCmd.Bool("no-use", false, `disable calling nvm use <version> after install`)
 
 func init() {
 	// sets default for BASE_URL
@@ -197,11 +202,10 @@ func CheckSha(fileName string, node_body, sha_body []byte) error {
 }
 
 // install a given node version
-// TODO: install should output success message
 // TODO: nvm install -h outputs help text twice
-// TODO: install should always update/create symlinks in .nevermind/bin
 func Install(args []string) (err error) {
 	InstallCmd.Parse(args)
+	args = InstallCmd.Args()
 
 	if *installHelp {
 		// TODO: maybe verbose help message here
@@ -239,14 +243,12 @@ func Install(args []string) (err error) {
 
 	select {
 	case node_body = <-node_chan:
-		break
 	case err = <-err_chan:
 		return
 	}
 
 	select {
 	case sha_body = <-sha_chan:
-		break
 	case err = <-err_chan:
 		return
 	}
@@ -264,11 +266,14 @@ func Install(args []string) (err error) {
 	dir := filepath.Dir(fileName)
 	os.MkdirAll(dir, 0755)
 
+	// TODO: stream
 	if err := utils.SaveToFile(node_body, fileName); err != nil {
 		return err
 	}
 
 	defer os.Remove(fileName)
+
+	// TODO: join ungzip and untar
 
 	unzipped, err := utils.UnGzip(fileName, dir)
 
@@ -302,10 +307,37 @@ func Install(args []string) (err error) {
 		// TODO: should we force overwrite?
 		log.Println("file already existed")
 	default:
+		// returns some other error
+		return fmt.Errorf("uncaught error: %w", err)
+	}
+
+	// create symlinks of bins
+	binTarget := common.GetNVMDir("bin")
+	// target all symlinks to nvmShim
+	nvmShim := filepath.Join(binTarget, NVM_SHIM)
+	// installed bins
+	nodeBins := filepath.Join(targetDir, "bin")
+	bins, err := os.ReadDir(nodeBins)
+
+	if err != nil {
 		return
 	}
 
-	log.Println("Success! Extracted node to", targetDir)
+	for _, bin := range bins {
+		source := filepath.Join(binTarget, bin.Name())
+
+		err = syscall.Symlink(nvmShim, source)
+
+		if err != nil && !errors.Is(err, os.ErrExist) {
+			return fmt.Errorf("cannot make symlink for %s = %w", bin.Name(), err)
+		}
+	}
+
+	fmt.Println("Successfully installed", version)
+
+	if !*installNoUse {
+		return Use([]string{"--no-install", string(version)})
+	}
 
 	return nil
 }

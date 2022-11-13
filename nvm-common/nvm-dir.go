@@ -6,16 +6,16 @@ import (
 )
 
 // user-relative path to app directory
-const NVMDIR string = ".nevermind"
+const NVM_DIR string = ".nevermind"
 
-// get a path relative to [common.NVMDIR]
+// get a path relative to [common.NVM_DIR]
 func GetNVMDir(path ...string) string {
 	// TODO: deal with this error
 	homeDir, _ := os.UserHomeDir()
 
 	path = append([]string{
 		homeDir,
-		NVMDIR,
+		NVM_DIR,
 	},
 		path...,
 	)

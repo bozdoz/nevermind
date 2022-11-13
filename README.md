@@ -57,9 +57,6 @@ node -v
 
 ### Remaining tasks
 
-- Access to `npm` and `npx` executables
-  - possible now by building nvm-shim to PATH as `node`, then symlinking `npm` and `npx` to the shim
-- ~~Build script for nvm-shim~~, and symlinking node, npm, and npx
 - github actions for building and generating tags and packages
   - no idea if this is what I want
 - install script (bash?)
@@ -67,12 +64,7 @@ node -v
 - progress bar on node download
 - search for matching node download if only major or minor numbers are given
 - ability to download latest LTS
-- ~~documentation~~ Maybe done with godoc
 - tests
-- automatically call `install` when `use` doesn't match
-- automatically call `use` after `install`
-- make sure there's no infinite loops of `install` and `use`
-- figure out go mod versioning??
 - write install script for windows (extracting zip at minimum)
 - figure out global installs (e.g. npm i -g yarn)
   - it goes to node/v/bin as a symlink

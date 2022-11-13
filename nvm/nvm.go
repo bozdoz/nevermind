@@ -27,7 +27,7 @@ import (
 )
 
 // nvm version
-const VERSION = "v0.1.2"
+const VERSION = "v0.1.3"
 
 var help *flag.FlagSet
 
@@ -74,13 +74,13 @@ func fail(message string) {
 	os.Exit(1)
 }
 
+// TODO: a command to show executables from NVM_DIR/bin
 func main() {
 	flag.Parse()
 
 	args := flag.Args()
 
 	log.Println("args", args)
-	log.Println("vFlag", *vFlag)
 
 	if len(args) == 0 {
 		// -v passed
