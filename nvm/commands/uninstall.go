@@ -52,7 +52,13 @@ func Uninstall(args []string) (err error) {
 		log.Println("failed to get config: %w", err)
 	}
 
-	err = os.RemoveAll(common.GetNVMDir("node", string(version)))
+	installDir, err := common.GetNVMDir("node", string(version))
+
+	if err != nil {
+		return
+	}
+
+	err = os.RemoveAll(installDir)
 
 	if err != nil {
 		return

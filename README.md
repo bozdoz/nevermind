@@ -17,7 +17,24 @@ Getting Started:
 
 1. Use/Open in VSCode devcontainer (.devcontainer directory) extension
 2. Run the go package download prompts
-3. Call the nvm scripts directly with `go run`:
+
+You might need to build the executable:
+
+```bash
+go build -o ~/.nevermind/bin ./nvm-shim
+```
+
+Or with `go generate`:
+
+```bash
+go generate ./...
+```
+
+Make sure this directory is in your `PATH` (perhaps via `.bashrc`):
+
+```bash
+export PATH="$HOME/.nevermind/bin:$PATH"
+```
 
 ```bash
 go run ./nvm install 16.0.0
@@ -35,25 +52,13 @@ Run with `DEBUG=1` to output debug logs:
 DEBUG=1 go run ./nvm install 16.0.0
 ```
 
-After `install`, and `use`, you might need to build the executable:
-
-```bash
-go build -o ~/.nevermind/bin ./nvm-shim
-```
-
-Make sure this directory is in your `PATH` (perhaps via `.bashrc`):
-
-```bash
-export PATH="$HOME/.nevermind/bin:$PATH"
-```
-
 If this is all set up, you should be able to run:
 
 ```bash
 node -v
 ```
 
-(WIP) `npm`, `npx`, and anything installed via `npm i -g`
+(WIP) ~~`npm`, `npx`, and~~ anything installed via `npm i -g`
 
 ### Remaining tasks
 
@@ -61,12 +66,17 @@ node -v
   - no idea if this is what I want
 - install script (bash?)
   - I want a way to automatically build nvm-shim, update PATH, create binary symlinks on installation
+
+nvm tasks:
 - progress bar on node download
 - search for matching node download if only major or minor numbers are given
-- ability to download latest LTS
+- write nvm install script for windows (extracting zip at minimum)
 - tests
-- write install script for windows (extracting zip at minimum)
-- figure out global installs (e.g. npm i -g yarn)
-  - it goes to node/v/bin as a symlink
+- ability to download latest LTS
 - optimize downloads and untar/ungzip with streams
   - ideally download to file & ungzip & sha at the same time with io.MultiWriter (am I crazy?)
+
+nvm-shim tasks:
+- tests
+- figure out global installs (e.g. npm i -g yarn)
+  - it goes to node/v/bin as a symlink

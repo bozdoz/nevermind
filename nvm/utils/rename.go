@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 )
 
@@ -15,6 +16,7 @@ func Rename(source, target string) (err error) {
 		// try moving the file
 		// could be an issue with running this
 		// inside of a docker container
+		log.Println("attempting to move file instead of renaming", source, "->", target)
 		err = moveFile(source, target)
 	}
 

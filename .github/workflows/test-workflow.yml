@@ -1,0 +1,25 @@
+name: TestWorkflow
+
+on:
+  push:
+    paths-ignore:
+      - "**/*.md"
+      - "**/doc.go"
+      - "*.sh"
+      - ".gitignore"
+      - "Dockerfile"
+      - "LICENSE"
+      - ".devcontainer/*"
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        # mac-latest too expensive
+        os: ["ubuntu-latest", "windows-latest"]
+    runs-on: ${{ matrix.os }}
+    container:
+      image: golang:1.19.3-bullseye
+    steps:
+      - uses: actions/checkout@v2
+      - run: go test ./... -cover

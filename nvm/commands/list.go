@@ -20,7 +20,11 @@ func init() {
 
 // list installed node versions
 func List(cmd string, args []string) (err error) {
-	dir := common.GetNVMDir("node")
+	dir, err := common.GetNVMDir("node")
+
+	if err != nil {
+		return
+	}
 
 	files, err := os.ReadDir(dir)
 

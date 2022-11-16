@@ -15,8 +15,12 @@ func GetVersion(v string) (Version, error) {
 	version := re.FindStringSubmatch(v)
 
 	if len(version) < 2 {
-		return "", fmt.Errorf("could not determine version: %s", v)
+		return "", versionError(v)
 	}
 
 	return Version(version[1]), nil
+}
+
+func versionError(v string) error {
+	return fmt.Errorf("could not determine version: %s", v)
 }

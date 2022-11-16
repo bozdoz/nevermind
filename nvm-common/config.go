@@ -2,6 +2,10 @@ package common
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"io/fs"
 	"log"
 	"os"
 )
@@ -10,23 +14,31 @@ type config struct {
 	Current Version `json:"current"`
 }
 
+// config filename
+const CONFIG_NAME = "config.json"
+
+// config file permissions
+const CONFIG_PERM = 0644
+
+// overridden in tests.
+var (
+	getNvmDir  = GetNVMDir
+	fileOpener = openFile
+)
+
+func openFile(name string, flag int, perm fs.FileMode) (io.ReadWriteCloser, error) {
+	return os.OpenFile(name, flag, perm)
+}
+
 func GetConfig() (cfg config, err error) {
-	var file *os.File
+	cfg = config{}
+	configFile, err := getNvmDir(CONFIG_NAME)
 
-	configFile := GetNVMDir("config.json")
-
-	log.Println("config:", configFile)
-
-	// check if config file exists
-	_, err = os.Stat(configFile)
-
-	if err == nil {
-		log.Println("config exists")
-	} else {
-		log.Println("creating config")
+	if err != nil {
+		return
 	}
 
-	file, err = os.OpenFile(configFile, os.O_CREATE|os.O_RDONLY, 0644)
+	file, err := fileOpener(configFile, os.O_CREATE|os.O_RDONLY, CONFIG_PERM)
 
 	if err != nil {
 		return
@@ -36,23 +48,27 @@ func GetConfig() (cfg config, err error) {
 
 	defer file.Close()
 
-	if err != nil && (err.Error() == "EOF" || os.IsNotExist(err)) {
+	fmt.Println("config", cfg, "err", err)
+
+	if err != nil && (errors.Is(err, io.EOF) || os.IsNotExist(err)) {
 		// can't decode empty file; start fresh
 		cfg = config{}
 		err = nil
 	}
 
-	log.Println("config", cfg)
-
 	return
 }
 
 func SetConfig(cfg config) error {
-	configFile := GetNVMDir("config.json")
+	configFile, err := getNvmDir(CONFIG_NAME)
+
+	if err != nil {
+		return err
+	}
 
 	log.Println("set config", configFile, cfg)
 
-	file, err := os.OpenFile(configFile, os.O_WRONLY, 0644)
+	file, err := fileOpener(configFile, os.O_CREATE|os.O_WRONLY, CONFIG_PERM)
 
 	if err != nil {
 		return err
