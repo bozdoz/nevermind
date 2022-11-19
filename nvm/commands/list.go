@@ -6,20 +6,24 @@ import (
 	"os"
 
 	common "github.com/bozdoz/nevermind/nvm-common"
-	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
 // flag set for [commands.List]
-var ListCmd = flag.NewFlagSet("list", flag.ContinueOnError)
+const list = "list"
+
+var listCmd = flag.NewFlagSet(list, flag.ContinueOnError)
 
 func init() {
-	ListCmd.Usage = func() {
-		utils.PrintTabs("\tlist, ls\tlist installed node versions")
-	}
+	registerCommand(command{
+		FlagSet: listCmd,
+		aliases: []string{"ls"},
+		help:    "list installed node versions",
+		Handler: listHandler,
+	})
 }
 
 // list installed node versions
-func List(cmd string, args []string) (err error) {
+func listHandler(_ string, _ []string) (err error) {
 	dir, err := common.GetNVMDir("node")
 
 	if err != nil {

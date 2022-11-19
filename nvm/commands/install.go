@@ -31,30 +31,31 @@ import (
 
 // basename of binary in NVM_DIR
 const NVM_SHIM = "nvm-shim"
+const install = "install"
 
-// TODO: document env variables that we use
-
-// flag set for [commands.Install]
-var InstallCmd = flag.NewFlagSet("install", flag.ContinueOnError)
-
-var installHelp = InstallCmd.Bool("help", false, `prints help text`)
-var installNoUse = InstallCmd.Bool("no-use", false, `disable calling nvm use <version> after install`)
+var installCmd = flag.NewFlagSet(install, flag.ContinueOnError)
+var installHelp = installCmd.Bool("help", false, `prints help text`)
+var installNoUse = installCmd.Bool("no-use", false, `disable calling nvm use <version> after install`)
 
 func init() {
-	InstallCmd.Usage = func() {
-		utils.PrintTabs("\tinstall, i\tinstall a version of node")
-	}
+	registerCommand(command{
+		FlagSet: installCmd,
+		aliases: []string{"i"},
+		help:    "install a version of node",
+		Handler: installHandler,
+	})
 }
 
 // install a given node version
-// TODO: nvm install -h outputs help text twice
-func Install(args []string) (err error) {
-	InstallCmd.Parse(args)
-	args = InstallCmd.Args()
+// TODO? nvm install -h outputs help text twice
+// TODO: break up into smaller functions
+func installHandler(_ string, args []string) (err error) {
+	installCmd.Parse(args)
+	args = installCmd.Args()
 
 	if *installHelp {
 		// TODO: maybe verbose help message here
-		InstallCmd.Usage()
+		installCmd.Usage()
 		utils.FlushTabs()
 		return
 	}
@@ -62,55 +63,90 @@ func Install(args []string) (err error) {
 	if len(args) == 0 {
 		return errors.New("install did not get arguments")
 	}
-	version, err := common.GetVersion(args[0])
+
+	var version common.Version
+	if args[0] == "lts" {
+		version, err = utils.GetLTS()
+	} else {
+		version, err = common.GetVersion(args[0])
+	}
 
 	if err != nil {
 		return
+	}
+
+	if !version.IsSpecific() {
+		// look up latest within range
+		version, err = utils.GetLatestFromVersion(version)
 	}
 
 	log.Println("installing version", version)
 
 	node_url := utils.GetDownloadUrl(version, utils.DOWNLOAD_NODE)
 	sha_url := utils.GetDownloadUrl(version, utils.DOWNLOAD_SHASUM)
-	log.Println("download node url", node_url)
-	log.Println("download sha url", sha_url)
+	segments := strings.Split(node_url, "/")
+	nodeFileName := segments[len(segments)-1]
 
+	log.Println("node url", node_url)
+
+	// AFAIK this is the best way to do async http requests
 	node_chan := make(chan []byte)
-	sha_chan := make(chan []byte)
+	sha_chan := make(chan string)
 	err_chan := make(chan error)
 
-	// TODO: allow cancelling the downloads via SIGINT
-	go utils.Download(node_url, node_chan, err_chan)
-	go utils.Download(sha_url, sha_chan, err_chan)
+	fmt.Printf("Downloading node v%s\n", version)
+
+	// TODO? allow cancelling the downloads via SIGINT
+	go func() {
+		node_download, err := utils.DownloadNode(node_url)
+
+		if err != nil {
+			err_chan <- err
+		} else {
+			node_chan <- node_download
+		}
+	}()
+
+	go func() {
+		sha, err := utils.FetchSha(sha_url, nodeFileName)
+
+		if err != nil {
+			err_chan <- err
+		} else {
+			sha_chan <- sha
+		}
+	}()
 
 	var node_body []byte
-	var sha_body []byte
+	var sha_body string
 
+	// waits on node request
 	select {
 	case node_body = <-node_chan:
 	case err = <-err_chan:
 		return
 	}
 
+	// waits on sha request
 	select {
 	case sha_body = <-sha_chan:
 	case err = <-err_chan:
 		return
 	}
 
-	segments := strings.Split(node_url, "/")
-	baseFileName := segments[len(segments)-1]
-	fileName, err := common.GetNVMDir("node", baseFileName)
+	err = utils.CheckSha(node_body, sha_body)
+
+	if err != nil {
+		return
+	}
+
+	fileName, err := common.GetNVMDir("node", nodeFileName)
 
 	if err != nil {
 		return
 	}
 
 	log.Println("filename", fileName)
-
-	if err := utils.CheckSha(baseFileName, node_body, sha_body); err != nil {
-		return err
-	}
 
 	dir := filepath.Dir(fileName)
 	os.MkdirAll(dir, 0755)
@@ -123,7 +159,6 @@ func Install(args []string) (err error) {
 	defer os.Remove(fileName)
 
 	// TODO: join ungzip and untar
-
 	unzipped, err := utils.UnGzip(fileName, dir)
 
 	if err != nil {
@@ -185,10 +220,10 @@ func Install(args []string) (err error) {
 		}
 	}
 
-	fmt.Println("Successfully installed", version)
+	fmt.Printf("Successfully installed v%s\n", version)
 
 	if !*installNoUse {
-		return Use([]string{"--no-install", string(version)})
+		return useHandler(use, []string{"--no-install", string(version)})
 	}
 
 	return nil

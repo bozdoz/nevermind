@@ -66,15 +66,18 @@ node -v
   - no idea if this is what I want
 - install script (bash?)
   - I want a way to automatically build nvm-shim, update PATH, create binary symlinks on installation
+- create CHANGELOG.mdd
+- publish script (bash?); want to auto-tag 
 
 nvm tasks:
-- progress bar on node download
-- search for matching node download if only major or minor numbers are given
+- read from local .nvmrc file on `nvm use`
+- ~~progress bar on node download~~
+- ~~search for matching node download if only major or minor numbers are given~~
 - write nvm install script for windows (extracting zip at minimum)
 - tests
-- ability to download latest LTS
-- optimize downloads and untar/ungzip with streams
-  - ideally download to file & ungzip & sha at the same time with io.MultiWriter (am I crazy?)
+- ~~ability to download latest LTS (via nvm install lts)~~
+- ~~optimize downloads~~ and untar/ungzip with streams
+  - ideally ungzip & untar from []bytes before writing the file
 
 nvm-shim tasks:
 - tests

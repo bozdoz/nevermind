@@ -27,7 +27,7 @@ func (d NodeDownload) x() {}
 const SHASUMS = "SHASUMS256.txt"
 
 // default download location
-const DEFAULT_BASE_URL = "https://nodejs.org/dist"
+const defaultBaseUrl = "https://nodejs.org/dist"
 
 // NVM_NODEJS_ORG_MIRROR - base url for downloading node; default: "https://nodejs.org/dist"
 var BASE_URL = os.Getenv("NVM_NODEJS_ORG_MIRROR")
@@ -35,7 +35,7 @@ var BASE_URL = os.Getenv("NVM_NODEJS_ORG_MIRROR")
 func init() {
 	// sets default for BASE_URL
 	if BASE_URL == "" {
-		BASE_URL = DEFAULT_BASE_URL
+		BASE_URL = defaultBaseUrl
 	}
 }
 

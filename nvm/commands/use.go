@@ -10,28 +10,31 @@ import (
 	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
-// flag set for [commands.Use]
-var UseCmd = flag.NewFlagSet("use", flag.ContinueOnError)
+const use = "use"
 
-var useHelp = UseCmd.Bool("help", false, `prints help text`)
+var useCmd = flag.NewFlagSet(use, flag.ContinueOnError)
+var useHelp = useCmd.Bool("help", false, `prints help text`)
 
 // TODO: should the default be an env var?
-var useNoInstall = UseCmd.Bool("no-install", false, "disable installing if nvm use cannot find version")
+var useNoInstall = useCmd.Bool("no-install", false, "disable installing if nvm use cannot find version")
 
 func init() {
-	UseCmd.Usage = func() {
-		utils.PrintTabs("\tuse\tuse a version of node")
-	}
+	registerCommand(command{
+		FlagSet: useCmd,
+		help:    "use a version of node",
+		Handler: useHandler,
+	})
 }
 
 // use a version of node (updates config with desired version)
-func Use(args []string) (err error) {
-	UseCmd.Parse(args)
-	args = UseCmd.Args()
+func useHandler(_ string, args []string) (err error) {
+	// TODO: maybe move to generic command registry
+	useCmd.Parse(args)
+	args = useCmd.Args()
 
 	if *useHelp {
 		// TODO: maybe verbose help message here
-		UseCmd.Usage()
+		useCmd.Usage()
 		utils.FlushTabs()
 		return
 	}
@@ -46,6 +49,8 @@ func Use(args []string) (err error) {
 		return
 	}
 
+	// TODO: check if not specific, then check list if we have it
+
 	_, err = common.GetNodeBin(version, "node")
 
 	if err != nil {
@@ -58,7 +63,7 @@ func Use(args []string) (err error) {
 		fmt.Println(msg)
 		fmt.Println("installing...")
 
-		err = Install([]string{"--use=false", string(version)})
+		err = installHandler(install, []string{"--no-use", string(version)})
 
 		if err != nil {
 			return fmt.Errorf("%s, and could not install - %w", msg, err)
@@ -83,6 +88,7 @@ func Use(args []string) (err error) {
 		}
 	}
 
+	// TODO: this should be the actual specific version; not whatever was passed
 	fmt.Printf("You are now using node v%s\n", version)
 
 	return nil

@@ -5,20 +5,26 @@ import (
 	"fmt"
 
 	common "github.com/bozdoz/nevermind/nvm-common"
-	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
 // flag set for [commands.Which]
-var WhichCmd = flag.NewFlagSet("which", flag.ContinueOnError)
+const which = "which"
+
+var whichCmd = flag.NewFlagSet(which, flag.ContinueOnError)
 
 func init() {
-	WhichCmd.Usage = func() {
-		utils.PrintTabs("\twhich, where\tget the path to the node executable for a given version")
-	}
+	registerCommand(command{
+		FlagSet: whichCmd,
+		aliases: []string{"where"},
+		help:    "get the path to the node executable for a given version",
+		Handler: whichHandler,
+	})
 }
 
 // get the path to the node executable for a given version
-func Which(cmd string, args []string) (err error) {
+func whichHandler(cmd string, args []string) (err error) {
+	whichCmd.Parse(args)
+	args = whichCmd.Args()
 	if len(args) < 1 {
 		return fmt.Errorf("%s command requires a single argument for version", cmd)
 	}

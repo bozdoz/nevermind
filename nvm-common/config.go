@@ -3,7 +3,6 @@ package common
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -47,8 +46,6 @@ func GetConfig() (cfg config, err error) {
 	err = json.NewDecoder(file).Decode(&cfg)
 
 	defer file.Close()
-
-	fmt.Println("config", cfg, "err", err)
 
 	if err != nil && (errors.Is(err, io.EOF) || os.IsNotExist(err)) {
 		// can't decode empty file; start fresh

@@ -27,7 +27,7 @@ import (
 )
 
 // nvm version
-const VERSION = "v0.1.4"
+const VERSION = "v0.1.5"
 
 var help *flag.FlagSet
 
@@ -50,11 +50,9 @@ func init() {
 		flag.PrintDefaults()
 		utils.PrintTabs("")
 		utils.PrintTabs("SUBCOMMANDS:")
-		commands.InstallCmd.Usage()
-		commands.UninstallCmd.Usage()
-		commands.UseCmd.Usage()
-		commands.ListCmd.Usage()
-		commands.WhichCmd.Usage()
+
+		commands.Commands.Usage()
+
 		utils.FlushTabs()
 	}
 }
@@ -96,26 +94,15 @@ func main() {
 
 	var err error
 
-	// TODO: nvm versioning, show config
-	// TODO: maybe we should time the whole command
-	switch cmd {
-	case "install", "i":
-		help = commands.InstallCmd
-		err = commands.Install(args)
-	case "uninstall":
-		help = commands.UninstallCmd
-		err = commands.Uninstall(args)
-	case "use":
-		help = commands.UseCmd
-		err = commands.Use(args)
-	case "list", "ls":
-		help = commands.ListCmd
-		err = commands.List(cmd, args)
-	case "which", "where":
-		help = commands.WhichCmd
-		err = commands.Which(cmd, args)
-	default:
-		err = fmt.Errorf("no command defined: %s", cmd)
+	// TODO: command to show config
+	found, ok := commands.Commands[cmd]
+
+	if ok {
+		help = found.FlagSet
+
+		err = found.Handler(cmd, args)
+	} else {
+		err = fmt.Errorf("subcommand does not exist: %s", cmd)
 	}
 
 	if err != nil {

@@ -8,20 +8,25 @@ import (
 	"os"
 
 	common "github.com/bozdoz/nevermind/nvm-common"
-	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
-// flag set for [commands.Uninstall]
-var UninstallCmd = flag.NewFlagSet("uninstall", flag.ContinueOnError)
+const uninstall = "uninstall"
+
+var uninstallCmd = flag.NewFlagSet(uninstall, flag.ContinueOnError)
 
 func init() {
-	UninstallCmd.Usage = func() {
-		utils.PrintTabs("\tuninstall\tuninstall a specific node version")
-	}
+	registerCommand(command{
+		FlagSet: uninstallCmd,
+		help:    "uninstall a specific node version",
+		Handler: uninstallHandler,
+	})
 }
 
 // uninstall a specific version of node
-func Uninstall(args []string) (err error) {
+func uninstallHandler(_ string, args []string) (err error) {
+	uninstallCmd.Parse(args)
+	args = uninstallCmd.Args()
+
 	if len(args) < 1 {
 		return errors.New("uninstall requires a single argument for version")
 	}

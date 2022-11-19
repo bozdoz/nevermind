@@ -50,3 +50,21 @@ func TestVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestVersionIsSpecific(t *testing.T) {
+	tests := [...]runs[Version, bool]{
+		{"1.0.0", true},
+		{"1.0", false},
+		{"1", false},
+	}
+
+	for _, vals := range tests {
+		t.Run(fmt.Sprintf("given %s, expect %t", vals.input, vals.expected), func(t *testing.T) {
+			got := vals.input.IsSpecific()
+
+			if got != vals.expected {
+				t.Errorf("got %t, want %t", got, vals.expected)
+			}
+		})
+	}
+}

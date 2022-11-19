@@ -4,6 +4,7 @@ package main
 //go:generate go build -o $HOME/.nevermind/bin/nvm-shim ./
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -35,6 +36,24 @@ func fail(message string) {
 	os.Exit(1)
 }
 
+// from `npm i --help`
+var installAliases = [...]string{
+	"add",
+	"i",
+	"in",
+	"ins",
+	"inst",
+	"insta",
+	"instal",
+	"isnt",
+	"isnta",
+	"isntal",
+	"isntall",
+}
+
+// TODO: figure out install global commands to symlink
+
+// TODO: npm --help not working
 func main() {
 	bin, args := os.Args[0], os.Args[1:]
 
@@ -79,12 +98,12 @@ func main() {
 	cmd := exec.Command(bin, args...)
 
 	cmd.Stdin = os.Stdin
+	cmd.Stderr = os.Stderr
 
 	if len(args) == 0 {
 		// when args == 0, because I get:
 		// exec: Stdout already set
 		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
 
 		cmd.Run()
 	} else {
@@ -93,6 +112,8 @@ func main() {
 		if err != nil {
 			fail(err.Error())
 		}
+
+		out = bytes.TrimSpace(out)
 
 		if len(out) != 0 {
 			fmt.Println(string(out))
