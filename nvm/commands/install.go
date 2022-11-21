@@ -34,8 +34,9 @@ const NVM_SHIM = "nvm-shim"
 const install = "install"
 
 var installCmd = flag.NewFlagSet(install, flag.ContinueOnError)
-var installHelp = installCmd.Bool("help", false, `prints help text`)
-var installNoUse = installCmd.Bool("no-use", false, `disable calling nvm use <version> after install`)
+var installHelp = installCmd.Bool("help", false, "prints help text")
+var installNoUse = installCmd.Bool("no-use", false, "disable calling nvm use <version> after install")
+var installForce = installCmd.Bool("force", false, "force install")
 
 func init() {
 	registerCommand(command{
@@ -50,8 +51,11 @@ func init() {
 // TODO? nvm install -h outputs help text twice
 // TODO: break up into smaller functions
 func installHandler(_ string, args []string) (err error) {
+	// TODO: make parse work with flags after args
 	installCmd.Parse(args)
 	args = installCmd.Args()
+
+	log.Println("parsed args", args)
 
 	if *installHelp {
 		// TODO: maybe verbose help message here
@@ -60,14 +64,21 @@ func installHandler(_ string, args []string) (err error) {
 		return
 	}
 
-	if len(args) == 0 {
-		return errors.New("install did not get arguments")
-	}
-
 	var version common.Version
-	if args[0] == "lts" {
+
+	switch {
+	case len(args) == 0:
+		version, err = utils.ReadNvmrc()
+
+		switch {
+		case errors.Is(err, utils.ErrNoNvmRc):
+			err = errors.New("install did not get arguments")
+		case err != nil:
+			err = fmt.Errorf("failed to get .nvmrc version: %w", err)
+		}
+	case args[0] == "lts":
 		version, err = utils.GetLTS()
-	} else {
+	default:
 		version, err = common.GetVersion(args[0])
 	}
 
@@ -78,6 +89,19 @@ func installHandler(_ string, args []string) (err error) {
 	if !version.IsSpecific() {
 		// look up latest within range
 		version, err = utils.GetLatestFromVersion(version)
+	}
+
+	// check if version already installed, unless --force is present
+	if !*installForce {
+		// should be able to ignore error here
+		installed, _ := utils.GetInstalledVersions()
+
+		for _, ver := range installed {
+			if ver == version {
+				fmt.Printf("version %s already installed!\n", version)
+				return
+			}
+		}
 	}
 
 	log.Println("installing version", version)
@@ -189,7 +213,7 @@ func installHandler(_ string, args []string) (err error) {
 	case err == nil:
 		break
 	case errors.Is(err, os.ErrExist):
-		// TODO: should we force overwrite?
+		// TODO: force overwrite if "--force"
 		log.Println("file already existed")
 	default:
 		// returns some other error

@@ -27,7 +27,7 @@ import (
 )
 
 // nvm version
-const VERSION = "v0.1.5"
+const VERSION = "v0.1.6"
 
 var help *flag.FlagSet
 

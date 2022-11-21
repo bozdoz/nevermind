@@ -38,11 +38,6 @@ func TestVersion(t *testing.T) {
 			if vals.expected == "" {
 				if err == nil {
 					t.Errorf("expected error, but got nil")
-				} else {
-					expectError := versionError(vals.input)
-					if err.Error() != expectError.Error() {
-						t.Errorf("got %q, want %q", err, expectError)
-					}
 				}
 			} else if v != vals.expected {
 				t.Errorf("got %q, want %q", v, vals.expected)

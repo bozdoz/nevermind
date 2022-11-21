@@ -62,15 +62,15 @@ node -v
 
 ### Remaining tasks
 
-- github actions for building and generating tags and packages
+- github actions for building and generating releases
   - no idea if this is what I want
 - install script (bash?)
   - I want a way to automatically build nvm-shim, update PATH, create binary symlinks on installation
-- create CHANGELOG.mdd
-- publish script (bash?); want to auto-tag 
+- ~~create CHANGELOG.md~~
+- ~~publish script (bash?); want to auto-tag~~
 
 nvm tasks:
-- read from local .nvmrc file on `nvm use`
+- ~~read from local .nvmrc file on `nvm use`~~
 - ~~progress bar on node download~~
 - ~~search for matching node download if only major or minor numbers are given~~
 - write nvm install script for windows (extracting zip at minimum)

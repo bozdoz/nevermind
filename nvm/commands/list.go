@@ -3,9 +3,9 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"os"
 
 	common "github.com/bozdoz/nevermind/nvm-common"
+	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
 // flag set for [commands.List]
@@ -24,29 +24,20 @@ func init() {
 
 // list installed node versions
 func listHandler(_ string, _ []string) (err error) {
-	dir, err := common.GetNVMDir("node")
+	versions, err := utils.GetInstalledVersions()
 
 	if err != nil {
 		return
 	}
 
-	files, err := os.ReadDir(dir)
+	config, err := common.GetConfig()
 
 	if err != nil {
 		return
 	}
 
-	dirs := make([]string, 0, len(files))
-
-	for _, f := range files {
-		if f.IsDir() {
-			dirs = append(dirs, f.Name())
-		}
-	}
-
-	fmt.Println(dirs)
-
-	config, _ := common.GetConfig()
+	// TODO: should this be vertical list?
+	fmt.Println(versions)
 
 	if config.Current != "" {
 		fmt.Println("Current", config.Current)

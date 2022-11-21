@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 
 	common "github.com/bozdoz/nevermind/nvm-common"
 	"github.com/bozdoz/nevermind/nvm/utils"
@@ -39,17 +40,36 @@ func useHandler(_ string, args []string) (err error) {
 		return
 	}
 
-	if len(args) == 0 {
-		return errors.New("use did not get arguments")
-	}
+	var version common.Version
 
-	version, err := common.GetVersion(args[0])
+	if len(args) == 0 {
+		version, err = utils.ReadNvmrc()
+
+		if err != nil {
+			return errors.New("use did not get arguments")
+		}
+	} else {
+		// version in cli arg
+		version, err = common.GetVersion(args[0])
+	}
 
 	if err != nil {
 		return
 	}
 
-	// TODO: check if not specific, then check list if we have it
+	// if not specific, then check list to see if we have it
+	if !version.IsSpecific() {
+		installed, err := utils.GetInstalledVersions()
+
+		if err == nil {
+			// check list to see if we already have a match
+			for _, ver := range installed {
+				if strings.HasPrefix(string(ver), fmt.Sprintf("%s.", version)) {
+					version = ver
+				}
+			}
+		}
+	}
 
 	_, err = common.GetNodeBin(version, "node")
 
@@ -63,6 +83,7 @@ func useHandler(_ string, args []string) (err error) {
 		fmt.Println(msg)
 		fmt.Println("installing...")
 
+		// TODO: how to get installed version from non-specific
 		err = installHandler(install, []string{"--no-use", string(version)})
 
 		if err != nil {
