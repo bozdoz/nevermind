@@ -1,13 +1,18 @@
 name: TestWorkflow
 
 on:
+  workflow_run:
+    workflows: 
+      - test
+    types:
+      - completed
   push:
     tags:
 
 jobs:
   release:
-    needs: test
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/setup-go@v3
         with: 
