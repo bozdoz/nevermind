@@ -3,6 +3,7 @@ name: TestWorkflow
 on:
   push:
     tags:
+      - v*
     paths-ignore:
       - "**/*.md"
       - "**/doc.go"
