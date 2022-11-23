@@ -1,9 +1,9 @@
-name: TestWorkflow
+name: ReleaseWorkflow
 
 on:
   workflow_run:
     workflows: 
-      - test
+      - TestWorkflow
     types:
       - completed
   push:
