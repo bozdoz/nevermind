@@ -54,7 +54,6 @@ func GetVersion(v string) (Version, error) {
 	version := version_regex.FindStringSubmatch(v)
 
 	if len(version) < 2 {
-		// TODO: I'm not sure how to check if errors.Is(err, VersionError)
 		return "", VersionError{"could not determine version", v}
 	}
 

@@ -1,4 +1,5 @@
-// nvm-shim intercepts requests to node, npm, and npx
+// nvm-shim intercepts requests to node, npm, npx, and any other
+// binaries installed by npm
 package main
 
 //go:generate go build -o $HOME/.nevermind/bin/nvm-shim ./
@@ -15,18 +16,6 @@ import (
 	common "github.com/bozdoz/nevermind/nvm-common"
 )
 
-// the main executable
-const NODE = "node"
-
-/*
-LOCAL DEVELOPMENT use only
-options are anything accessible in the node bin dir:
-"node", "npm", "npx", "corepack"
-
-set NVM_BIN=node at runtime
-*/
-var NVM_BIN = os.Getenv("NVM_BIN")
-
 func init() {
 	common.Debugger()
 }
@@ -36,34 +25,15 @@ func fail(message string) {
 	os.Exit(1)
 }
 
-// from `npm i --help`
-var installAliases = [...]string{
-	"add",
-	"i",
-	"in",
-	"ins",
-	"inst",
-	"insta",
-	"instal",
-	"isnt",
-	"isnta",
-	"isntal",
-	"isntall",
-}
-
-// TODO: figure out install global commands to symlink
-
-// TODO: npm --help not working
 func main() {
 	bin, args := os.Args[0], os.Args[1:]
 
 	bin = filepath.Base(bin)
 
-	log.Println("NVM_BIN", NVM_BIN)
 	log.Println("bin:", bin, "args:", args)
 
 	// let's blow out any possible relative path exploits
-	if strings.ContainsAny(bin, "./\\") {
+	if strings.ContainsAny(bin, "$~./\\") {
 		fail(fmt.Sprintf("invalid bin: %s", bin))
 	}
 
@@ -80,37 +50,29 @@ func main() {
 		fail("nvm encountered an error: version is empty! did you install a node version with `nvm install`?")
 	}
 
-	bin, err = common.GetNodeBin(version, bin)
+	absBin, err := common.GetNodeBin(version, bin)
 
 	if err != nil {
-		// check if running locally with NVM_BIN env var
-		if NVM_BIN != "" {
-			bin, err = common.GetNodeBin(version, NVM_BIN)
-		}
-
-		if err != nil {
-			fail(fmt.Sprintf("failed to get bin from node version: %s, v%s — %s", bin, version, err))
-		}
+		fail(fmt.Sprintf("failed to get bin from node version: %s, v%s — %s", bin, version, err))
 	}
 
-	log.Println("running", bin)
+	log.Println("running", absBin)
 
-	cmd := exec.Command(bin, args...)
+	cmd := exec.Command(absBin, args...)
 
 	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
 
 	if len(args) == 0 {
-		// when args == 0, because I get:
-		// exec: Stdout already set
-		cmd.Stdout = os.Stdout
-
 		cmd.Run()
 	} else {
-		out, err := cmd.Output()
+		// npm --help sends output through stderr; can't break on err here
+		out, err := cmd.CombinedOutput()
 
-		if err != nil {
-			fail(err.Error())
+		// symlink newly installed binaries
+		if bin == "npm" && isGlobalInstall(args) {
+			// check for newly installed binaries
+			log.Println("creating new symlinks for binaries")
+			common.CreateSymlinks(version)
 		}
 
 		out = bytes.TrimSpace(out)
@@ -118,5 +80,52 @@ func main() {
 		if len(out) != 0 {
 			fmt.Println(string(out))
 		}
+
+		// give npm --help what it wants
+		if err != nil {
+			os.Exit(1)
+		}
 	}
+}
+
+var globalFlags = map[string]bool{
+	"-g":                true,
+	"--global":          true,
+	"--location=global": true,
+}
+
+// from `npm i --help`
+var installAliases = map[string]bool{
+	"add":     true,
+	"i":       true,
+	"in":      true,
+	"ins":     true,
+	"inst":    true,
+	"insta":   true,
+	"instal":  true,
+	"install": true,
+	"isnt":    true,
+	"isnta":   true,
+	"isntal":  true,
+	"isntall": true,
+}
+
+// checks if we're installing a global binary
+func isGlobalInstall(args []string) bool {
+	var isGlobal bool
+	var isInstall bool
+
+	for i, arg := range args {
+		if globalFlags[arg] {
+			isGlobal = true
+		}
+		if arg == "--location" && args[i+1] == "global" {
+			isGlobal = true
+		}
+		if installAliases[arg] {
+			isInstall = true
+		}
+	}
+
+	return isGlobal && isInstall
 }

@@ -47,6 +47,7 @@ func uninstallHandler(_ string, args []string) (err error) {
 
 	if err == nil {
 		// TODO: what should the fallback version be?
+		// should Version type be able to be invalid?
 		config.Current = ""
 		err = common.SetConfig(config)
 

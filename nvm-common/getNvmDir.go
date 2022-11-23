@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 )
 
+// TODO: monkey-patch this instead
 type homeFunc func() (string, error)
 type existsFunc func(path string) error
 

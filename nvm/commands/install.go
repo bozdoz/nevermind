@@ -23,14 +23,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
+	"time"
 
 	common "github.com/bozdoz/nevermind/nvm-common"
 	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
-// basename of binary in NVM_DIR
-const NVM_SHIM = "nvm-shim"
 const install = "install"
 
 var installCmd = flag.NewFlagSet(install, flag.ContinueOnError)
@@ -164,84 +162,51 @@ func installHandler(_ string, args []string) (err error) {
 		return
 	}
 
-	fileName, err := common.GetNVMDir("node", nodeFileName)
+	nodeDir, err := common.GetNVMDir("node")
 
 	if err != nil {
 		return
 	}
 
-	log.Println("filename", fileName)
+	os.MkdirAll(nodeDir, 0755)
 
-	dir := filepath.Dir(fileName)
-	os.MkdirAll(dir, 0755)
+	s := time.Now()
 
-	// TODO: stream
-	if err := utils.SaveToFile(node_body, fileName); err != nil {
-		return err
-	}
-
-	defer os.Remove(fileName)
-
-	// TODO: join ungzip and untar
-	unzipped, err := utils.UnGzip(fileName, dir)
+	err = utils.UnArchiveBytes(node_body, nodeDir)
 
 	if err != nil {
 		return
 	}
 
-	log.Println("UnGzip", unzipped)
+	log.Println("time to save files:", time.Since(s))
 
-	defer os.Remove(unzipped)
-
-	if err := utils.Untar(unzipped, dir); err != nil {
-		return err
-	}
-
-	if err != nil {
-		return
-	}
-
-	// feels like I shouldn't care about this error
-	targetDir, _ := common.GetNVMDir("node", string(version))
-	sourceDir := strings.TrimSuffix(unzipped, ".tar")
+	targetDir := filepath.Join(nodeDir, string(version))
+	sourceDir := filepath.Join(nodeDir, strings.TrimSuffix(nodeFileName, ".tar.gz"))
 
 	err = os.Rename(sourceDir, targetDir)
 
-	defer os.RemoveAll(sourceDir)
-
 	switch {
 	case err == nil:
-		break
+		defer os.RemoveAll(sourceDir)
 	case errors.Is(err, os.ErrExist):
-		// TODO: force overwrite if "--force"
-		log.Println("file already existed")
+		// if it exists, remove it and replace it
+		// TODO test this
+		os.RemoveAll(targetDir)
+		err = os.Rename(sourceDir, targetDir)
+
+		if err != nil {
+			// dang
+			return
+		}
 	default:
 		// returns some other error
 		return fmt.Errorf("uncaught error: %w", err)
 	}
 
-	// create symlinks of bins
-	// we've already established the function should work
-	// at this point; ignoring error
-	binTarget, _ := common.GetNVMDir("bin")
-	// target all symlinks to nvmShim
-	nvmShim := filepath.Join(binTarget, NVM_SHIM)
-	// installed bins
-	nodeBins := filepath.Join(targetDir, "bin")
-	bins, err := os.ReadDir(nodeBins)
+	err = common.CreateSymlinks(version)
 
 	if err != nil {
 		return
-	}
-
-	for _, bin := range bins {
-		source := filepath.Join(binTarget, bin.Name())
-
-		err = syscall.Symlink(nvmShim, source)
-
-		if err != nil && !errors.Is(err, os.ErrExist) {
-			return fmt.Errorf("cannot make symlink for %s = %w", bin.Name(), err)
-		}
 	}
 
 	fmt.Printf("Successfully installed v%s\n", version)

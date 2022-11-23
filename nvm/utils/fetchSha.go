@@ -37,7 +37,6 @@ func FetchSha(url, filename string) (sha string, err error) {
 
 		// when we find the filename, we can end reading
 		if fields[1] == filename {
-			log.Println("got sha", fields[0])
 			return fields[0], nil
 		}
 	}

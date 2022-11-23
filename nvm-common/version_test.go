@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 )
@@ -38,6 +39,11 @@ func TestVersion(t *testing.T) {
 			if vals.expected == "" {
 				if err == nil {
 					t.Errorf("expected error, but got nil")
+				} else {
+					var expectedErr VersionError
+					if !errors.As(err, &expectedErr) {
+						t.Errorf("expected version error, but got %q", err)
+					}
 				}
 			} else if v != vals.expected {
 				t.Errorf("got %q, want %q", v, vals.expected)

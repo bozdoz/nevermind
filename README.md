@@ -58,28 +58,17 @@ If this is all set up, you should be able to run:
 node -v
 ```
 
-(WIP) ~~`npm`, `npx`, and~~ anything installed via `npm i -g`
-
 ### Remaining tasks
 
 - github actions for building and generating releases
   - no idea if this is what I want
 - install script (bash?)
   - I want a way to automatically build nvm-shim, update PATH, create binary symlinks on installation
-- ~~create CHANGELOG.md~~
-- ~~publish script (bash?); want to auto-tag~~
+- test local npm installs in a project
 
 nvm tasks:
-- ~~read from local .nvmrc file on `nvm use`~~
-- ~~progress bar on node download~~
-- ~~search for matching node download if only major or minor numbers are given~~
 - write nvm install script for windows (extracting zip at minimum)
 - tests
-- ~~ability to download latest LTS (via nvm install lts)~~
-- ~~optimize downloads~~ and untar/ungzip with streams
-  - ideally ungzip & untar from []bytes before writing the file
 
 nvm-shim tasks:
 - tests
-- figure out global installs (e.g. npm i -g yarn)
-  - it goes to node/v/bin as a symlink

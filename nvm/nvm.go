@@ -27,7 +27,7 @@ import (
 )
 
 // nvm version
-const VERSION = "v0.1.6"
+const VERSION = "v0.1.7"
 
 var help *flag.FlagSet
 
@@ -85,7 +85,7 @@ func main() {
 		if *vFlag {
 			fmt.Println(VERSION)
 		} else {
-			fail("Please specify a subcommand\n")
+			fail("Please specify a command\n")
 		}
 		return
 	}
@@ -95,14 +95,14 @@ func main() {
 	var err error
 
 	// TODO: command to show config
-	found, ok := commands.Commands[cmd]
+	command, ok := commands.Commands[cmd]
 
 	if ok {
-		help = found.FlagSet
+		help = command.FlagSet
 
-		err = found.Handler(cmd, args)
+		err = command.Handler(cmd, args)
 	} else {
-		err = fmt.Errorf("subcommand does not exist: %s", cmd)
+		err = fmt.Errorf("command does not exist: %s", cmd)
 	}
 
 	if err != nil {

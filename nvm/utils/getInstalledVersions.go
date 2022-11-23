@@ -37,7 +37,6 @@ func GetInstalledVersions() (versions []common.Version, err error) {
 		vi := versions[i]
 		vj := versions[j]
 
-		// TODO: should this be properties instead of methods?
 		if vi.Major() == vj.Major() {
 			if vi.Minor() == vj.Minor() {
 				return vi.Patch() > vj.Patch()
