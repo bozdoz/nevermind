@@ -11,9 +11,7 @@ import (
 	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
-const use = "use"
-
-var useCmd = flag.NewFlagSet(use, flag.ContinueOnError)
+var useCmd = flag.NewFlagSet("use", flag.ContinueOnError)
 var useHelp = useCmd.Bool("help", false, `prints help text`)
 
 // TODO: should the default be an env var?
@@ -69,26 +67,43 @@ func useHandler(_ string, args []string) (err error) {
 				}
 			}
 		}
-	}
-
-	_, err = common.GetNodeBin(version, "node")
-
-	if err != nil {
-		msg := fmt.Sprintf("version not found: %s", version)
-
-		if *useNoInstall {
-			return fmt.Errorf(msg)
-		}
-		// try installing
-		fmt.Println(msg)
-		fmt.Println("installing...")
-
-		// TODO: how to get installed version from non-specific
-		err = installHandler(install, []string{"--no-use", string(version)})
+	} else {
+		// check if this specific version is installed
+		_, err = common.GetNodeBin(version, "node")
 
 		if err != nil {
-			return fmt.Errorf("%s, and could not install - %w", msg, err)
+			msg := fmt.Sprintf("version not found: %s", version)
+
+			// --no-install
+			if *useNoInstall {
+				return fmt.Errorf(msg)
+			}
+
+			// try installing
+			fmt.Println(msg)
+			fmt.Println("installing...")
+
+			_, err = install(version, installOptions{})
+
+			if err == nil {
+				// successful install also called `use`
+				return
+			} else {
+				return fmt.Errorf("%s, and could not install - %w", msg, err)
+			}
 		}
+	}
+
+	return use(version)
+}
+
+// updates the current version in the config
+//
+// version here should be a specific version
+func use(version common.Version) (err error) {
+	// seems silly to verify version specificity again
+	if !version.IsSpecific() {
+		return fmt.Errorf("version is not specific, and cannot be used: %s", version)
 	}
 
 	config, err := common.GetConfig()
@@ -107,10 +122,16 @@ func useHandler(_ string, args []string) (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to write config: %w", err)
 		}
+
+		// make sure we have the binaries in our nvm PATH
+		err = common.SyncSymlinks(version)
+
+		if err != nil {
+			return
+		}
 	}
 
-	// TODO: this should be the actual specific version; not whatever was passed
 	fmt.Printf("You are now using node v%s\n", version)
 
-	return nil
+	return
 }

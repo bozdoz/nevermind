@@ -30,6 +30,8 @@ func TestVersion(t *testing.T) {
 		{"-1.2.3", ""},
 		{"1.1.9999999", "1.1.9999999"},
 		{"one.two.three", ""},
+		{"1..", ""},
+		{"..", ""},
 	}
 
 	for _, vals := range tests {

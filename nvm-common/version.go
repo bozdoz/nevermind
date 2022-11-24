@@ -20,6 +20,10 @@ func (ve VersionError) Error() string {
 // returned by [common.GetVersion]
 type Version string
 
+func (v Version) String() string {
+	return string(v)
+}
+
 // has all major.minor.patch
 func (v Version) IsSpecific() bool {
 	return strings.Count(string(v), ".") == 2
@@ -54,6 +58,7 @@ func GetVersion(v string) (Version, error) {
 	version := version_regex.FindStringSubmatch(v)
 
 	if len(version) < 2 {
+		// TODO: I'm not sure how to check if errors.Is(err, VersionError)
 		return "", VersionError{"could not determine version", v}
 	}
 

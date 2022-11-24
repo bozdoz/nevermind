@@ -1,3 +1,20 @@
+# v###
+
+Nov 23 2022
+
+- tested npx and npm within a package; 
+- cleaned up symlink syncing and uninstalling
+
+# v0.1.7
+
+Nov 22 2022
+
+- symlinking npm installs; 
+- streaming unarchive; 
+- removes NVM_BIN; 
+- changes nvm-shim to use CombinedOutput for stderr messages;
+
+
 # v0.1.6
 
 Nov 21 2022

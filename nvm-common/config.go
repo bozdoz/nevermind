@@ -75,3 +75,13 @@ func SetConfig(cfg config) error {
 
 	return err
 }
+
+func GetCurrentVersion() (version Version, err error) {
+	config, err := GetConfig()
+
+	if err != nil {
+		return
+	}
+
+	return config.Current, nil
+}

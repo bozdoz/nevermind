@@ -29,9 +29,7 @@ import (
 	"github.com/bozdoz/nevermind/nvm/utils"
 )
 
-const install = "install"
-
-var installCmd = flag.NewFlagSet(install, flag.ContinueOnError)
+var installCmd = flag.NewFlagSet("install", flag.ContinueOnError)
 var installHelp = installCmd.Bool("help", false, "prints help text")
 var installNoUse = installCmd.Bool("no-use", false, "disable calling nvm use <version> after install")
 var installForce = installCmd.Bool("force", false, "force install")
@@ -84,13 +82,26 @@ func installHandler(_ string, args []string) (err error) {
 		return
 	}
 
+	_, err = install(version, installOptions{
+		force: *installForce,
+		noUse: *installNoUse,
+	})
+
+	return err
+}
+
+type installOptions struct {
+	force, noUse bool
+}
+
+func install(version common.Version, options installOptions) (ret common.Version, err error) {
 	if !version.IsSpecific() {
 		// look up latest within range
 		version, err = utils.GetLatestFromVersion(version)
 	}
 
 	// check if version already installed, unless --force is present
-	if !*installForce {
+	if !options.force {
 		// should be able to ignore error here
 		installed, _ := utils.GetInstalledVersions()
 
@@ -200,20 +211,21 @@ func installHandler(_ string, args []string) (err error) {
 		}
 	default:
 		// returns some other error
-		return fmt.Errorf("uncaught error: %w", err)
+		return ret, fmt.Errorf("uncaught error: %w", err)
 	}
 
-	err = common.CreateSymlinks(version)
-
-	if err != nil {
-		return
+	success := func() {
+		fmt.Printf("Successfully installed v%s\n", version)
 	}
 
-	fmt.Printf("Successfully installed v%s\n", version)
-
-	if !*installNoUse {
-		return useHandler(use, []string{"--no-install", string(version)})
+	if !options.noUse {
+		// install is done
+		success()
+		// `use` syncs symlinks
+		err = use(version)
+	} else {
+		success()
 	}
 
-	return nil
+	return
 }

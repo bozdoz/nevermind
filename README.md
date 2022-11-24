@@ -61,10 +61,10 @@ node -v
 ### Remaining tasks
 
 - github actions for building and generating releases
-  - no idea if this is what I want
+  - https://github.com/softprops/action-gh-release
 - install script (bash?)
   - I want a way to automatically build nvm-shim, update PATH, create binary symlinks on installation
-- test local npm installs in a project
+
 
 nvm tasks:
 - write nvm install script for windows (extracting zip at minimum)

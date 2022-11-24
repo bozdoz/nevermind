@@ -64,13 +64,19 @@ func uninstallHandler(_ string, args []string) (err error) {
 		return
 	}
 
+	log.Println("removing", installDir)
+
 	err = os.RemoveAll(installDir)
 
 	if err != nil {
 		return
 	}
 
-	fmt.Println("Successfully uninstalled", version)
+	err = common.RemoveSymlinks(version, nil)
 
-	return nil
+	if err == nil {
+		fmt.Println("Successfully uninstalled", version)
+	}
+
+	return
 }

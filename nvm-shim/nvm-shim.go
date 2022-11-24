@@ -5,7 +5,6 @@ package main
 //go:generate go build -o $HOME/.nevermind/bin/nvm-shim ./
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -21,6 +20,7 @@ func init() {
 }
 
 func fail(message string) {
+	log.Println("nvm-shim failed")
 	fmt.Println(message)
 	os.Exit(1)
 }
@@ -37,14 +37,11 @@ func main() {
 		fail(fmt.Sprintf("invalid bin: %s", bin))
 	}
 
-	// might be able to extract GetCurrent from this
-	config, err := common.GetConfig()
+	version, err := common.GetCurrentVersion()
 
 	if err != nil {
 		fail("no node version installed. Did you run `nvm install`?")
 	}
-
-	version := config.Current
 
 	if version == "" {
 		fail("nvm encountered an error: version is empty! did you install a node version with `nvm install`?")
@@ -61,30 +58,21 @@ func main() {
 	cmd := exec.Command(absBin, args...)
 
 	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-	if len(args) == 0 {
-		cmd.Run()
-	} else {
-		// npm --help sends output through stderr; can't break on err here
-		out, err := cmd.CombinedOutput()
+	err = cmd.Run()
 
-		// symlink newly installed binaries
-		if bin == "npm" && isGlobalInstall(args) {
-			// check for newly installed binaries
-			log.Println("creating new symlinks for binaries")
-			common.CreateSymlinks(version)
-		}
+	// symlink newly installed binaries
+	if bin == "npm" && isGlobalInstall(args) {
+		// check for newly installed binaries
+		log.Println("creating new symlinks for binaries")
+		common.SyncSymlinks(version)
+	}
 
-		out = bytes.TrimSpace(out)
-
-		if len(out) != 0 {
-			fmt.Println(string(out))
-		}
-
-		// give npm --help what it wants
-		if err != nil {
-			os.Exit(1)
-		}
+	// give npm --help what it wants
+	if err != nil {
+		os.Exit(1)
 	}
 }
 

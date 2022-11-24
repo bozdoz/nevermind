@@ -8,9 +8,7 @@ import (
 )
 
 // flag set for [commands.Which]
-const which = "which"
-
-var whichCmd = flag.NewFlagSet(which, flag.ContinueOnError)
+var whichCmd = flag.NewFlagSet("which", flag.ContinueOnError)
 
 func init() {
 	registerCommand(command{
@@ -25,10 +23,18 @@ func init() {
 func whichHandler(cmd string, args []string) (err error) {
 	whichCmd.Parse(args)
 	args = whichCmd.Args()
+
+	var version common.Version
+
 	if len(args) < 1 {
-		return fmt.Errorf("%s command requires a single argument for version", cmd)
+		version, err = common.GetCurrentVersion()
+
+		if err != nil {
+			err = fmt.Errorf("%s command requires a single argument for version", cmd)
+		}
+	} else {
+		version, err = common.GetVersion(args[0])
 	}
-	version, err := common.GetVersion(args[0])
 
 	if err != nil {
 		return
@@ -42,5 +48,5 @@ func whichHandler(cmd string, args []string) (err error) {
 
 	fmt.Println(bin)
 
-	return nil
+	return
 }

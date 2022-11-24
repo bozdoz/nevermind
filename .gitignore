@@ -16,3 +16,4 @@
 
 nvm/commands/test.go
 .nvmrc
+node_modules/
