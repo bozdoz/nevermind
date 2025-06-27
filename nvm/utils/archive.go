@@ -2,6 +2,7 @@ package utils
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"bytes"
 	"compress/gzip"
 	"fmt"
@@ -45,7 +46,7 @@ func UnArchiveReader(reader io.Reader, dir string) (err error) {
 
 		if header.Typeflag == tar.TypeSymlink {
 			log.Println("found symlink", header.Linkname, dest)
-			syscall.Symlink(header.Linkname, dest)
+			_ = syscall.Symlink(header.Linkname, dest)
 			continue
 		}
 
@@ -74,4 +75,53 @@ func UnArchiveReader(reader io.Reader, dir string) (err error) {
 	}
 
 	return
+}
+
+func UnZipBytes(b []byte, dir string) (err error) {
+	zipReader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
+
+	if err != nil {
+		return err
+	}
+
+	for _, f := range zipReader.File {
+		fpath := filepath.Join(dir, f.Name)
+
+		// Prevent Zip Slip vulnerability
+		if !strings.HasPrefix(fpath, filepath.Clean(dir)+string(os.PathSeparator)) {
+			return &os.PathError{Op: "extract", Path: fpath, Err: os.ErrInvalid}
+		}
+
+		if f.FileInfo().IsDir() {
+			if err := os.MkdirAll(fpath, os.ModePerm); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+			return err
+		}
+
+		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			outFile.Close()
+			return err
+		}
+
+		_, err = io.Copy(outFile, rc)
+
+		outFile.Close()
+		rc.Close()
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -64,8 +64,10 @@ func useHandler(_ string, args []string) (err error) {
 			for _, ver := range installed {
 				if strings.HasPrefix(string(ver), fmt.Sprintf("%s.", version)) {
 					version = ver
+					break
 				}
 			}
+			// TODO: if it's not installed, we should try to install here
 		}
 	} else {
 		// check if this specific version is installed
@@ -76,7 +78,7 @@ func useHandler(_ string, args []string) (err error) {
 
 			// --no-install
 			if *useNoInstall {
-				return fmt.Errorf(msg)
+				return fmt.Errorf("%s", msg)
 			}
 
 			// try installing
@@ -103,6 +105,7 @@ func useHandler(_ string, args []string) (err error) {
 func use(version common.Version) (err error) {
 	// seems silly to verify version specificity again
 	if !version.IsSpecific() {
+		// TODO: should recommend installing
 		return fmt.Errorf("version is not specific, and cannot be used: %s", version)
 	}
 

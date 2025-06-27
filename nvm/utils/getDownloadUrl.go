@@ -49,17 +49,16 @@ determine where to download node install files
 used by [commands.Install]
 */
 func GetDownloadUrl(v common.Version, d exclusive_node_file) string {
-	remote_os, remote_arch := GetOsAndArch()
-	ext := "tar.gz"
-
-	// TODO: we don't actually test extracting zips on windows
-	if remote_os == "win" {
-		ext = "zip"
-		panic("we haven't written any code that would extract a zip yet")
-	}
-
 	switch d {
 	case DOWNLOAD_NODE:
+		remote_os, remote_arch := GetOsAndArch()
+		ext := "tar.gz"
+
+		// TODO: we don't actually test extracting zips on windows
+		if remote_os == "win" {
+			ext = "zip"
+		}
+
 		return fmt.Sprintf("%s/v%s/node-v%s-%s-%s.%s", BASE_URL, v, v, remote_os, remote_arch, ext)
 	case DOWNLOAD_SHASUM:
 		return fmt.Sprintf("%s/v%s/%s", BASE_URL, v, SHASUMS)

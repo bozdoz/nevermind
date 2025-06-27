@@ -170,6 +170,7 @@ func install(version common.Version, options installOptions) (ret common.Version
 	err = utils.CheckSha(node_body, sha_body)
 
 	if err != nil {
+		// TODO: what if the sha doesn't match?
 		return
 	}
 
@@ -192,6 +193,7 @@ func install(version common.Version, options installOptions) (ret common.Version
 	log.Println("time to save files:", time.Since(s))
 
 	targetDir := filepath.Join(nodeDir, string(version))
+	// TODO: might be .zip
 	sourceDir := filepath.Join(nodeDir, strings.TrimSuffix(nodeFileName, ".tar.gz"))
 
 	err = os.Rename(sourceDir, targetDir)
@@ -214,17 +216,12 @@ func install(version common.Version, options installOptions) (ret common.Version
 		return ret, fmt.Errorf("uncaught error: %w", err)
 	}
 
-	success := func() {
-		fmt.Printf("Successfully installed v%s\n", version)
-	}
+	fmt.Printf("Successfully installed v%s\n", version)
 
 	if !options.noUse {
 		// install is done
-		success()
 		// `use` syncs symlinks
 		err = use(version)
-	} else {
-		success()
 	}
 
 	return

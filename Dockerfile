@@ -1,4 +1,4 @@
-FROM golang:1.19.3-bullseye
+FROM golang:1.24.4-bookworm
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ USER gopher
 
 COPY --chown=gopher:gopher . .
 
-ENV NVMDIR .nevermind
+ENV NVMDIR=.nevermind
 
 # Add our hopeful new directory to the PATH, for ease of development
 RUN echo "\nexport PATH=\"\$HOME/${NVMDIR}/bin:\$PATH\"" >> ~/.bashrc && \
