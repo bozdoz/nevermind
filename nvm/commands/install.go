@@ -184,7 +184,15 @@ func install(version common.Version, options installOptions) (ret common.Version
 
 	s := time.Now()
 
-	err = utils.UnArchiveBytes(node_body, nodeDir)
+	var sourceDir string
+
+	if strings.HasSuffix(node_url, ".tar.gz") {
+		err = utils.UnArchiveBytes(node_body, nodeDir)
+		sourceDir = filepath.Join(nodeDir, strings.TrimSuffix(nodeFileName, ".tar.gz"))
+	} else {
+		err = utils.UnZipBytes(node_body, nodeDir)
+		sourceDir = filepath.Join(nodeDir, strings.TrimSuffix(nodeFileName, ".zip"))
+	}
 
 	if err != nil {
 		return
@@ -193,8 +201,6 @@ func install(version common.Version, options installOptions) (ret common.Version
 	log.Println("time to save files:", time.Since(s))
 
 	targetDir := filepath.Join(nodeDir, string(version))
-	// TODO: might be .zip
-	sourceDir := filepath.Join(nodeDir, strings.TrimSuffix(nodeFileName, ".tar.gz"))
 
 	err = os.Rename(sourceDir, targetDir)
 

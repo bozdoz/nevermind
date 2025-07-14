@@ -1,8 +1,11 @@
 package common
 
 import (
+	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 // TODO: monkey-patch this instead
@@ -36,12 +39,23 @@ func getNVMDirWithGetter(homeGetter homeFunc, path ...string) (string, error) {
 // installed globally (e.g. yarn, typescript)
 // returns directory string, and error
 func GetNodeBin(version Version, bin string) (string, error) {
-	return getNodeBinWithGetter(os.UserHomeDir, statFile, version, bin)
+	found, err := getNodeBinWithGetter(os.UserHomeDir, statFile, version, bin)
+
+	log.Printf("Looking for: %s\n\n  exists? %t\n\n", found, err == nil)
+
+	return found, err
 }
 
 // test extraction (am I crazy?)
 func getNodeBinWithGetter(homeGetter homeFunc, checkExists existsFunc, version Version, bin string) (path string, err error) {
-	path, err = getNVMDirWithGetter(homeGetter, "node", string(version), "bin", bin)
+	os := runtime.GOOS
+
+	if os == "windows" {
+		// maybe .exe?
+		path, err = getNVMDirWithGetter(homeGetter, "node", string(version), fmt.Sprintf("%s.exe", bin))
+	} else {
+		path, err = getNVMDirWithGetter(homeGetter, "node", string(version), "bin", bin)
+	}
 
 	if err != nil {
 		return

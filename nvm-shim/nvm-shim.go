@@ -20,7 +20,6 @@ func init() {
 }
 
 func fail(message string) {
-	log.Println("nvm-shim failed")
 	fmt.Println(message)
 	os.Exit(1)
 }

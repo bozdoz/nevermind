@@ -36,6 +36,8 @@ func uninstallHandler(_ string, args []string) (err error) {
 		return
 	}
 
+	// TODO: check if version is specific
+
 	_, err = common.GetNodeBin(version, "node")
 
 	if err != nil {

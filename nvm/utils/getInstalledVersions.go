@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"os"
 	"sort"
 
@@ -19,6 +20,8 @@ func GetInstalledVersions() (versions []common.Version, err error) {
 	if err != nil {
 		return
 	}
+
+	log.Println("Found files in dir: ", files, dir)
 
 	versions = make([]common.Version, 0, len(files))
 

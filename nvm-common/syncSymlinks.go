@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"syscall"
 )
 
@@ -35,10 +37,17 @@ func SyncSymlinks(version Version) (err error) {
 
 	// target all symlinks to nvmShim
 	nvmShim := filepath.Join(symlinkDir, NVM_SHIM)
-	// installed bins (via npm i, or node install)
-	nodeBins := filepath.Join(nvmDir, "node", version.String(), BIN)
 
-	// create symlinks for all bins in node/{version}/bin
+	// installed bins (via npm i, or node install)
+	var nodeBins string
+	is_windows := runtime.GOOS == "windows"
+	if is_windows {
+		nodeBins = filepath.Join(nvmDir, "node", version.String())
+	} else {
+		nodeBins = filepath.Join(nvmDir, "node", version.String(), BIN)
+	}
+
+	// create symlinks for all bins in node/{version}/bin (or node/version)
 	bins, err := os.ReadDir(nodeBins)
 
 	if err != nil {
@@ -50,6 +59,14 @@ func SyncSymlinks(version Version) (err error) {
 
 	for _, bin := range bins {
 		name := bin.Name()
+
+		log.Println("file found:", name)
+
+		if is_windows && (strings.HasSuffix(name, ".cmd") || strings.HasSuffix(name, ".exe")) {
+			// for windows I think we only want the executables?
+			continue
+		}
+
 		symlink := filepath.Join(symlinkDir, name)
 
 		err = syscall.Symlink(nvmShim, symlink)

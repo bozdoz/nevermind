@@ -81,7 +81,7 @@ func UnZipBytes(b []byte, dir string) (err error) {
 	zipReader, err := zip.NewReader(bytes.NewReader(b), int64(len(b)))
 
 	if err != nil {
-		return err
+		return
 	}
 
 	for _, f := range zipReader.File {
@@ -89,39 +89,40 @@ func UnZipBytes(b []byte, dir string) (err error) {
 
 		// Prevent Zip Slip vulnerability
 		if !strings.HasPrefix(fpath, filepath.Clean(dir)+string(os.PathSeparator)) {
-			return &os.PathError{Op: "extract", Path: fpath, Err: os.ErrInvalid}
+			return fmt.Errorf("%s: illegal file path", f.Name)
 		}
 
-		if f.FileInfo().IsDir() {
+		mode := f.Mode()
+
+		if mode.IsDir() {
 			if err := os.MkdirAll(fpath, os.ModePerm); err != nil {
 				return err
 			}
 			continue
 		}
 
-		if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
-			return err
-		}
+		outFile, err := os.OpenFile(fpath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
 
-		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 		if err != nil {
 			return err
 		}
+
+		defer outFile.Close()
 
 		rc, err := f.Open()
+
 		if err != nil {
-			outFile.Close()
 			return err
 		}
 
-		_, err = io.Copy(outFile, rc)
+		defer rc.Close()
 
-		outFile.Close()
-		rc.Close()
+		_, err = io.Copy(outFile, rc)
 
 		if err != nil {
 			return err
 		}
 	}
-	return nil
+
+	return
 }
